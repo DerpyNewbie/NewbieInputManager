@@ -1,0 +1,16 @@
+{
+  "name": "dev.derpynewbie.input-manager",
+  "version": "0.1.0",
+  "displayName": "Newbie Input Manager",
+  "description": "Customizable input manager for VRChat",
+  "unity": "2022.3",
+  "author": {
+    "name": "DerpyNewbie",
+    "email": "contact@derpynewbie.dev",
+    "url": "https://github.com/derpynewbie"
+  },
+  "vpmDependencies": {
+    "com.vrchat.worlds": ">=3.8.0"
+  },
+  "hideInEditor": false
+}
