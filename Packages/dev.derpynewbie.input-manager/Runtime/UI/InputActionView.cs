@@ -33,42 +33,49 @@ namespace DerpyNewbie.InputMan.UI
             set => inputAction = value;
         }
 
-        private void Start()
-        {
-            InputAction = InputAction;
-        }
-
         private void Update()
         {
+            if (inputAction == null)
+            {
+                SetText(actionNameText, "<NULL>");
+                SetText(bindingDisplayNameText, "<UNBOUND>");
+                return;
+            }
+
             if (slider)
             {
-                var value = InputAction.ReadValue();
-                slider.value = value;
+                slider.value = inputAction.ReadValue();
             }
 
             if (image)
             {
-                image.color = InputAction.IsPressed() ? activeColor : normalColor;
-
-                if (InputAction.WasPressedThisFrame())
-                {
-                    image.color = pressedColor;
-                }
-
-                if (InputAction.WasReleasedThisFrame())
-                {
-                    image.color = releasedColor;
-                }
+                image.color = GetStateColor();
             }
 
-            if (actionNameText)
+            SetText(actionNameText, inputAction.ActionName);
+            SetText(bindingDisplayNameText, inputAction.binding ? inputAction.binding.GetDisplayName() : "<UNBOUND>");
+        }
+
+        private Color GetStateColor()
+        {
+            if (inputAction.WasPressedThisFrame())
             {
-                actionNameText.text = InputAction ? InputAction.ActionName : "<NULL>";
+                return pressedColor;
             }
 
-            if (bindingDisplayNameText)
+            if (inputAction.WasReleasedThisFrame())
             {
-                bindingDisplayNameText.text = InputAction && InputAction.binding ? InputAction.binding.GetDisplayName() : "<UNBOUND>";
+                return releasedColor;
+            }
+
+            return inputAction.IsPressed() ? activeColor : normalColor;
+        }
+
+        private void SetText(TMP_Text target, string value)
+        {
+            if (target)
+            {
+                target.text = value;
             }
         }
     }

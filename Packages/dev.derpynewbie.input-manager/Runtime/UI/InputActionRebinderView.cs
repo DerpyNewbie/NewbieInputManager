@@ -31,57 +31,66 @@ namespace DerpyNewbie.InputMan.UI
         private NewbieInputProvider _lastBinding;
         private RebindingState _rebindingState;
 
+        private const string LogPrefix = "[InputActionRebinderView]";
+
         private void Update()
         {
-            switch (_rebindingState)
+            if (_rebindingState != RebindingState.WaitingForInput)
             {
-                case RebindingState.None:
-                {
-                    break;
-                }
-                case RebindingState.WaitingForInput:
-                {
-                    _inputWaitingTimer += Time.deltaTime;
-
-                    if (_inputWaitingTimer < inputWaitingTime)
-                    {
-                        break;
-                    }
-
-                    foreach (var inputProvider in inputManager.InputProviders)
-                    {
-                        if (inputDetectionThreshold > inputProvider.ReadValue())
-                        {
-                            continue;
-                        }
-
-                        if (_nextBinding && _nextBinding.GetPriority() > inputProvider.GetPriority())
-                        {
-                            continue;
-                        }
-
-                        _nextBinding = inputProvider;
-                        _rebindingState = RebindingState.Confirming;
-
-                        if (nextBindingView)
-                        {
-                            nextBindingView.InputProvider = _nextBinding;
-                        }
-                    }
-                    break;
-                }
-                case RebindingState.Confirming:
-                {
-                    break;
-                }
+                return;
             }
+
+            _inputWaitingTimer += Time.deltaTime;
+            if (_inputWaitingTimer < inputWaitingTime)
+            {
+                return;
+            }
+
+            var detected = FindActiveInputProvider();
+            if (detected == null)
+            {
+                return;
+            }
+
+            _nextBinding = detected;
+            _rebindingState = RebindingState.Confirming;
+
+            if (nextBindingView)
+            {
+                nextBindingView.InputProvider = _nextBinding;
+            }
+        }
+
+        /// <summary>
+        /// Find the highest priority input provider whose value exceeds the detection threshold
+        /// </summary>
+        /// <returns>The detected provider, or null if none of the providers are active</returns>
+        private NewbieInputProvider FindActiveInputProvider()
+        {
+            NewbieInputProvider result = null;
+            foreach (var inputProvider in inputManager.InputProviders)
+            {
+                if (inputProvider == null || inputDetectionThreshold > inputProvider.ReadValue())
+                {
+                    continue;
+                }
+
+                if (result != null && result.GetPriority() > inputProvider.GetPriority())
+                {
+                    continue;
+                }
+
+                result = inputProvider;
+            }
+
+            return result;
         }
 
         public bool BeginRebinding(NewbieInputAction action)
         {
             if (_targetInputAction != null || _rebindingState != RebindingState.None)
             {
-                Debug.LogWarning("[InputActionRebinderView] Already rebinding an input action");
+                Debug.LogWarning($"{LogPrefix} Already rebinding an input action");
                 return false;
             }
 
@@ -99,42 +108,39 @@ namespace DerpyNewbie.InputMan.UI
         {
             if (_rebindingState != RebindingState.Confirming)
             {
-                Debug.LogWarning("[InputActionRebinderView] Not confirming a rebind");
+                Debug.LogWarning($"{LogPrefix} Not confirming a rebind");
                 return;
             }
 
             if (_targetInputAction == null)
             {
-                Debug.LogWarning("[InputActionRebinderView] No target input action to confirm");
+                Debug.LogWarning($"{LogPrefix} No target input action to confirm");
                 return;
             }
 
-            _targetInputAction.binding = _nextBinding;
-
-            _targetInputAction = null;
-            _nextBinding = null;
-            _lastBinding = null;
-            _rebindingState = RebindingState.None;
-            _inputWaitingTimer = 0f;
-
-            gameObject.SetActive(false);
+            EndRebinding(_nextBinding);
         }
 
         public void CancelBinding()
         {
             if (_rebindingState == RebindingState.None)
             {
-                Debug.LogWarning("[InputActionRebinderView] Not rebinding");
+                Debug.LogWarning($"{LogPrefix} Not rebinding");
                 return;
             }
 
             if (_targetInputAction == null)
             {
-                Debug.LogWarning("[InputActionRebinderView] No target input action to cancel");
+                Debug.LogWarning($"{LogPrefix} No target input action to cancel");
                 return;
             }
 
-            _targetInputAction.binding = _lastBinding;
+            EndRebinding(_lastBinding);
+        }
+
+        private void EndRebinding(NewbieInputProvider binding)
+        {
+            _targetInputAction.binding = binding;
 
             _targetInputAction = null;
             _nextBinding = null;

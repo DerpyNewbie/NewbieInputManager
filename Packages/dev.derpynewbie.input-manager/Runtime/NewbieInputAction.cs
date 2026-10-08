@@ -46,15 +46,9 @@ namespace DerpyNewbie.InputMan
                 _currentFrame = Time.frameCount;
                 _currentValue = DoReadValue();
 
+                // Hysteresis: once pressed, stay pressed until the value drops below the release threshold
                 _wasPressed = _isPressed;
-                if (_isPressed)
-                {
-                    _isPressed = _currentValue > releaseThreshold;
-                }
-                else
-                {
-                    _isPressed = _currentValue > pressThreshold;
-                }
+                _isPressed = _currentValue > (_isPressed ? releaseThreshold : pressThreshold);
             }
 
             return _currentValue;
@@ -67,12 +61,8 @@ namespace DerpyNewbie.InputMan
                 return 0;
             }
 
-            if (isInverted)
-            {
-                return binding.ReadValue() * -1;
-            }
-
-            return binding.ReadValue();
+            var value = binding.ReadValue();
+            return isInverted ? -value : value;
         }
     }
 }

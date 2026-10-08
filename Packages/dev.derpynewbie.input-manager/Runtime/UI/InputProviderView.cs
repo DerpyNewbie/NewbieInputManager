@@ -13,6 +13,8 @@ namespace DerpyNewbie.InputMan.UI
         private TMP_Text text;
         [SerializeField]
         private NewbieInputProvider inputProvider;
+        [SerializeField] [Tooltip("Moves this view to the top of its parent while the input value exceeds this threshold")]
+        private float activeThreshold = 0.8f;
 
         public NewbieInputProvider InputProvider
         {
@@ -30,14 +32,14 @@ namespace DerpyNewbie.InputMan.UI
 
         private void Update()
         {
-            var value = InputProvider != null ? InputProvider.ReadValue() : 0f;
+            var value = inputProvider != null ? inputProvider.ReadValue() : 0f;
 
             if (slider)
             {
                 slider.value = value;
             }
 
-            if (0.8f < value)
+            if (activeThreshold < value)
             {
                 transform.SetSiblingIndex(0);
             }
