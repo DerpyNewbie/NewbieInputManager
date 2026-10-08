@@ -20,14 +20,23 @@ namespace DerpyNewbie.InputMan.UI
             set
             {
                 inputProvider = value;
-                if (text) text.text = value != null ? value.GetDisplayName() : "None";
+
+                if (text)
+                {
+                    text.text = value != null ? value.GetDisplayName() : "None";
+                }
             }
         }
 
         private void Update()
         {
-            var value = InputProvider.ReadValue();
-            slider.value = value;
+            var value = InputProvider != null ? InputProvider.ReadValue() : 0f;
+
+            if (slider)
+            {
+                slider.value = value;
+            }
+
             if (0.8f < value)
             {
                 transform.SetSiblingIndex(0);

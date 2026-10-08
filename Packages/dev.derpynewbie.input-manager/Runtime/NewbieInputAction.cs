@@ -8,7 +8,7 @@ namespace DerpyNewbie.InputMan
         [SerializeField]
         private string actionName;
 
-        public NewbieInputProvider inputProvider;
+        public NewbieInputProvider binding;
 
         public float pressThreshold = 0.8f;
         public float releaseThreshold = 0.2f;
@@ -19,18 +19,23 @@ namespace DerpyNewbie.InputMan
         private bool _wasPressed;
         private bool _isPressed;
 
+        public string ActionName => actionName;
+
         public bool IsPressed()
         {
-            return _currentValue > pressThreshold;
+            ReadValue();
+            return _isPressed;
         }
 
         public bool WasPressedThisFrame()
         {
+            ReadValue();
             return _isPressed && !_wasPressed;
         }
 
         public bool WasReleasedThisFrame()
         {
+            ReadValue();
             return !_isPressed && _wasPressed;
         }
 
@@ -57,17 +62,17 @@ namespace DerpyNewbie.InputMan
 
         private float DoReadValue()
         {
-            if (inputProvider == null)
+            if (binding == null)
             {
                 return 0;
             }
 
             if (isInverted)
             {
-                return inputProvider.ReadValue() * -1;
+                return binding.ReadValue() * -1;
             }
 
-            return inputProvider.ReadValue();
+            return binding.ReadValue();
         }
     }
 }
