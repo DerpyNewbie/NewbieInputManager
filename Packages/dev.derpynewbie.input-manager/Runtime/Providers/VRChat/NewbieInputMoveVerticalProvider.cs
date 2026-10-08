@@ -3,16 +3,9 @@ namespace DerpyNewbie.InputMan.Providers.VRChat
 {
     public class NewbieInputMoveVerticalProvider : NewbieInputVRCProvider
     {
-        private float _value;
-
         public override void InputMoveVertical(float value, UdonInputEventArgs args)
         {
-            _value = value;
-        }
-
-        public override float ReadValue()
-        {
-            return _value;
+            SetAxisValue(value);
         }
 
         public override string GetName()

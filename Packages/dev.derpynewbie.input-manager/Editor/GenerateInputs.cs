@@ -35,67 +35,75 @@ namespace DerpyNewbie.InputMan.Editor
         [MenuItem("Tools/DerpyNewbie/InputManager/Generate KeyCode Inputs")]
         public static void GenerateKeyCodeInputs()
         {
-            var parent = new GameObject("KeyCodeInputs");
-            var keyCodes = (KeyCode[])Enum.GetValues(typeof(KeyCode));
-            for (var i = 0; i < keyCodes.Length; i++)
+            var parent = CreateParent("KeyCodeInputs");
+            foreach (KeyCode keyCode in Enum.GetValues(typeof(KeyCode)))
             {
-                var keyCode = keyCodes[i];
-                var go = new GameObject($"KeyCodeProvider_{keyCode}");
-                go.transform.SetParent(parent.transform);
-                var keyCodeProvider = go.AddComponent<NewbieInputKeyCodeProvider>();
-                var keyCodeProviderSo = new SerializedObject(keyCodeProvider);
-                keyCodeProviderSo.FindProperty("keyCode").enumValueIndex = i;
-                keyCodeProviderSo.ApplyModifiedProperties();
+                var provider = CreateProvider<NewbieInputKeyCodeProvider>(parent, $"KeyCodeProvider_{keyCode}");
+                var so = new SerializedObject(provider);
+                so.FindProperty("keyCode").intValue = (int)keyCode;
+                so.ApplyModifiedPropertiesWithoutUndo();
             }
+
             EditorGUIUtility.PingObject(parent);
         }
 
         [MenuItem("Tools/DerpyNewbie/InputManager/Generate VRChat Axis Inputs")]
         public static void GenerateAxisInputs()
         {
-            var parent = new GameObject("AxisInputs");
-            foreach (var axisNameKvp in VRChatAxisNames)
-            {
-                var go = new GameObject($"AxisProvider_{axisNameKvp.Key}");
-                go.transform.SetParent(parent.transform);
-                var axisProvider = go.AddComponent<NewbieInputAxisProvider>();
-                var axisProviderSo = new SerializedObject(axisProvider);
-                axisProviderSo.FindProperty("axisName").stringValue = axisNameKvp.Key;
-                axisProviderSo.FindProperty("displayName").stringValue = axisNameKvp.Value;
-                axisProviderSo.ApplyModifiedProperties();
-            }
-            EditorGUIUtility.PingObject(parent);
+            GenerateNamedInputs<NewbieInputAxisProvider>("AxisInputs", "AxisProvider", "axisName", VRChatAxisNames);
         }
 
         [MenuItem("Tools/DerpyNewbie/InputManager/Generate VRChat Button Inputs")]
         public static void GenerateButtonInputs()
         {
-            var parent = new GameObject("ButtonInputs");
-            foreach (var buttonNameKvp in VRChatButtonNames)
-            {
-                var go = new GameObject($"ButtonProvider_{buttonNameKvp.Key}");
-                go.transform.SetParent(parent.transform);
-                var buttonProvider = go.AddComponent<NewbieInputButtonProvider>();
-                var buttonProviderSo = new SerializedObject(buttonProvider);
-                buttonProviderSo.FindProperty("buttonName").stringValue = buttonNameKvp.Key;
-                buttonProviderSo.FindProperty("displayName").stringValue = buttonNameKvp.Value;
-                buttonProviderSo.ApplyModifiedProperties();
-            }
-            EditorGUIUtility.PingObject(parent);
+            GenerateNamedInputs<NewbieInputButtonProvider>("ButtonInputs", "ButtonProvider", "buttonName", VRChatButtonNames);
         }
 
         [MenuItem("Tools/DerpyNewbie/InputManager/Generate VRChat Input Provider Types")]
         public static void GenerateVRChatInputProviderTypes()
         {
-            var parent = new GameObject("VRCInputs");
-            var vrcInputProviderTypes = Assembly.GetAssembly(typeof(NewbieInputVRCProvider)).GetTypes().Where(t => t.IsSubclassOf(typeof(NewbieInputVRCProvider))).ToArray();
+            var parent = CreateParent("VRCInputs");
+            var vrcInputProviderTypes = Assembly.GetAssembly(typeof(NewbieInputVRCProvider))
+                .GetTypes()
+                .Where(t => !t.IsAbstract && t.IsSubclassOf(typeof(NewbieInputVRCProvider)));
             foreach (var vrcInputProviderType in vrcInputProviderTypes)
             {
                 var go = new GameObject($"VRCInputProvider_{vrcInputProviderType.Name}");
                 go.transform.SetParent(parent.transform);
                 go.AddComponent(vrcInputProviderType);
             }
+
             EditorGUIUtility.PingObject(parent);
+        }
+
+        private static void GenerateNamedInputs<T>(string parentName, string objectPrefix, string namePropertyPath, Dictionary<string, string> names)
+            where T : NewbieInputProvider
+        {
+            var parent = CreateParent(parentName);
+            foreach (var kvp in names)
+            {
+                var provider = CreateProvider<T>(parent, $"{objectPrefix}_{kvp.Key}");
+                var so = new SerializedObject(provider);
+                so.FindProperty(namePropertyPath).stringValue = kvp.Key;
+                so.FindProperty("displayName").stringValue = kvp.Value;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            EditorGUIUtility.PingObject(parent);
+        }
+
+        private static GameObject CreateParent(string name)
+        {
+            var parent = new GameObject(name);
+            Undo.RegisterCreatedObjectUndo(parent, $"Generate {name}");
+            return parent;
+        }
+
+        private static T CreateProvider<T>(GameObject parent, string name) where T : Component
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent.transform);
+            return go.AddComponent<T>();
         }
     }
 }
